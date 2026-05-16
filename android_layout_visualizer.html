@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Android Layout Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222535;
+    --surface3: #2a2e42;
+    --border: #2e3248;
+    --border2: #3d4260;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --accent-glow: rgba(108,99,255,0.15);
+    --text: #e8eaf6;
+    --text2: #8b8fa8;
+    --text3: #555870;
+    --green: #4ade80;
+    --green-bg: rgba(74,222,128,0.08);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .header h1 {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+
+  .header p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 1px;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: calc(100vh - 65px);
+  }
+
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: hidden;
+  }
+
+  .preview-panel {
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .xml-panel {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .field { margin-bottom: 10px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  select, input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--text);
+    font-family: var(--sans);
+    outline: none;
+    transition: border-color .15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  select:focus, input:focus { border-color: var(--accent); }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b8fa8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    cursor: pointer;
+  }
+
+  .count-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-btn {
+    width: 30px;
+    height: 30px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+    font-family: var(--sans);
+  }
+
+  .count-btn:hover { background: var(--border); border-color: var(--accent); color: var(--accent2); }
+
+  .count-val {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent2);
+    min-width: 28px;
+    text-align: center;
+    font-family: var(--mono);
+  }
+
+  .btn-config {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+
+  .btn-config:last-child { margin-bottom: 0; }
+
+  .btn-config-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+  }
+
+  .btn-config-header:hover { background: var(--surface3); }
+
+  .btn-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .btn-config-header span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .chevron {
+    font-size: 10px;
+    color: var(--text3);
+    transition: transform .2s;
+  }
+
+  .chevron.open { transform: rotate(180deg); }
+
+  .btn-config-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-config-body.collapsed { display: none; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+
+  .mini-label {
+    display: block;
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .cb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface3);
+    transition: all .12s;
+  }
+
+  .cb-item:hover { border-color: var(--accent); }
+  .cb-item.checked { border-color: var(--accent); background: var(--accent-glow); }
+
+  .cb-item input { display: none; }
+
+  .cb-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1.5px solid var(--border2);
+    transition: all .12s;
+    flex-shrink: 0;
+  }
+
+  .cb-item.checked .cb-dot {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .cb-item span {
+    font-size: 10px;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+
+  .group-label {
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .phone-wrap {
+    background: var(--surface);
+    border-radius: 24px;
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .phone {
+    background: #111;
+    border-radius: 32px;
+    padding: 14px 8px 22px;
+    width: 200px;
+    border: 2px solid #2a2a2a;
+    box-shadow: inset 0 0 0 1px #1a1a1a;
+  }
+
+  .phone-bar {
+    width: 56px;
+    height: 7px;
+    background: #222;
+    border-radius: 4px;
+    margin: 0 auto 8px;
+  }
+
+  .phone-screen {
+    background: #fff;
+    border-radius: 18px;
+    width: 100%;
+    min-height: 300px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+    text-align: center;
+  }
+
+  .xml-scroll {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+  }
+
+  .xml-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+  .xml-scroll::-webkit-scrollbar-track { background: transparent; }
+  .xml-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--text2);
+    white-space: pre;
+  }
+
+  .xml-tag { color: #7dd3fc; }
+  .xml-attr { color: #a78bfa; }
+  .xml-val { color: #86efac; }
+  .xml-comment { color: #4b5563; font-style: italic; }
+
+  .copy-btn {
+    margin: 0 20px 20px;
+    padding: 9px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-size: 12px;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    font-weight: 500;
+  }
+
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent2); background: var(--accent-glow); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+  .layout-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .layout-tab {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface3);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    font-family: var(--sans);
+  }
+
+  .layout-tab:hover { border-color: var(--accent); color: var(--text); }
+  .layout-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .hint-box {
+    background: var(--accent-glow);
+    border: 1px solid rgba(108,99,255,.25);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--accent2);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; height: auto; }
+    .content { grid-template-columns: 1fr; }
+    .preview-panel { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">&#9654;</div>
+  <div>
+    <h1>Android Layout Visualizer</h1>
+    <p>Configure buttons and see the live preview + generated XML</p>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div>
+      <div class="section-label">Layout type</div>
+      <div class="layout-tabs" id="layoutTabs">
+        <button class="layout-tab active" onclick="setLayout('RelativeLayout',this)">Relative</button>
+        <button class="layout-tab" onclick="setLayout('LinearLayout-V',this)">Linear V</button>
+        <button class="layout-tab" onclick="setLayout('LinearLayout-H',this)">Linear H</button>
+        <button class="layout-tab" onclick="setLayout('ConstraintLayout',this)">Constraint</button>
+        <button class="layout-tab" onclick="setLayout('FrameLayout',this)">Frame</button>
+      </div>
+    </div>
+
+    <div id="hintBox" class="hint-box"></div>
+
+    <div class="card">
+      <div class="section-label">Number of buttons</div>
+      <div class="count-ctrl">
+        <button class="count-btn" onclick="changeCount(-1)">&#8722;</button>
+        <span class="count-val" id="countVal">2</span>
+        <button class="count-btn" onclick="changeCount(1)">&#43;</button>
+      </div>
+    </div>
+
+    <div id="linearOptions" class="card" style="display:none">
+      <div class="section-label">Linear options</div>
+      <div class="field">
+        <label>Layout gravity</label>
+        <select id="layoutGravity" onchange="render()">
+          <option value="">none</option>
+          <option value="center">center</option>
+          <option value="center_horizontal">center_horizontal</option>
+          <option value="center_vertical">center_vertical</option>
+          <option value="top">top</option>
+          <option value="bottom">bottom</option>
+          <option value="left">left</option>
+          <option value="right">right</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Button configuration</div>
+      <div id="btnConfigs"></div>
+    </div>
+
+  </div>
+
+  <div class="content">
+    <div class="preview-panel">
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-bar"></div>
+          <div class="phone-screen" id="phoneScreen"></div>
+        </div>
+      </div>
+      <div class="phone-label" id="phoneLabel">RelativeLayout</div>
+    </div>
+
+    <div class="xml-panel">
+      <div class="panel-header">
+        <span>Generated XML</span>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono)" id="xmlStats"></span>
+      </div>
+      <div class="xml-scroll">
+        <pre id="xmlOutput"></pre>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyXml()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy XML to clipboard
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS = [
+  { bg: '#6c63ff', border: '#4f46e5', text: '#fff' },
+  { bg: '#0ea5e9', border: '#0284c7', text: '#fff' },
+  { bg: '#10b981', border: '#059669', text: '#fff' },
+  { bg: '#f59e0b', border: '#d97706', text: '#fff' },
+  { bg: '#ef4444', border: '#dc2626', text: '#fff' },
+  { bg: '#ec4899', border: '#db2777', text: '#fff' }
+];
+
+const HINTS = {
+  RelativeLayout: 'Position elements relative to the parent or to each other using alignParent* and layout_below/toRightOf attributes.',
+  'LinearLayout-V': 'Elements stack top to bottom in XML order. Use layout_weight to share height proportionally.',
+  'LinearLayout-H': 'Elements line up left to right. Set layout_width="0dp" with layout_weight to share width equally.',
+  ConstraintLayout: 'Connect each side of a view to another view or parent. Both horizontal and vertical constraints are required.',
+  FrameLayout: 'Elements stack on top of each other (like layers). Use layout_gravity to position each one.'
+};
+
+let currentLayout = 'RelativeLayout';
+let btnCount = 2;
+let buttons = [];
+let collapsed = {};
+
+function initButtons(n) {
+  const old = buttons.slice();
+  buttons = [];
+  for (let i = 0; i < n; i++) {
+    buttons.push(old[i] || {
+      label: 'Button ' + (i + 1),
+      width: 'wrap_content',
+      height: 'wrap_content',
+      alignParent: [],
+      relPos: 'none',
+      relRef: 'none',
+      weight: '1',
+      gravity: '',
+      constH: 'parent',
+      constV: 'parent',
+      frameGravity: ''
+    });
+  }
+}
+
+function setLayout(lt, el) {
+  currentLayout = lt;
+  document.querySelectorAll('.layout-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('linearOptions').style.display =
+    (lt === 'LinearLayout-V' || lt === 'LinearLayout-H') ? 'block' : 'none';
+  document.getElementById('hintBox').textContent = HINTS[lt] || '';
+  document.getElementById('phoneLabel').textContent = lt.replace('-V', ' (vertical)').replace('-H', ' (horizontal)');
+  buildConfigs();
+  render();
+}
+
+function changeCount(d) {
+  btnCount = Math.max(1, Math.min(6, btnCount + d));
+  document.getElementById('countVal').textContent = btnCount;
+  initButtons(btnCount);
+  buildConfigs();
+  render();
+}
+
+function toggleCollapse(i) {
+  collapsed[i] = !collapsed[i];
+  const body = document.getElementById('cfg-body-' + i);
+  const chev = document.getElementById('cfg-chev-' + i);
+  body.classList.toggle('collapsed', collapsed[i]);
+  chev.classList.toggle('open', !collapsed[i]);
+}
+
+function toggleAttr(i, attr, el) {
+  el.classList.toggle('checked');
+  const checked = el.classList.contains('checked');
+  if (!buttons[i].alignParent) buttons[i].alignParent = [];
+  if (checked) { if (!buttons[i].alignParent.includes(attr)) buttons[i].alignParent.push(attr); }
+  else { buttons[i].alignParent = buttons[i].alignParent.filter(a => a !== attr); }
+  render();
+}
+
+function buildConfigs() {
+  const lt = currentLayout;
+  const container = document.getElementById('btnConfigs');
+  container.innerHTML = '';
+
+  buttons.forEach((b, i) => {
+    const c = COLORS[i % COLORS.length];
+    const isOpen = !collapsed[i];
+    const div = document.createElement('div');
+    div.className = 'btn-config';
+
+    const refOpts = buttons.map((_, j) => j !== i
+      ? `<option value="btn${j+1}" ${b.relRef === 'btn'+(j+1) ? 'selected' : ''}>Button ${j+1}</option>`
+      : '').join('');
+
+    const apAttrs = ['alignParentTop','alignParentBottom','alignParentLeft','alignParentRight','centerInParent','centerHorizontal','centerVertical'];
+
+    div.innerHTML = `
+      <div class="btn-config-header" onclick="toggleCollapse(${i})">
+        <div class="btn-dot" style="background:${c.bg}"></div>
+        <span>Button ${i+1}</span>
+        <span id="cfg-chev-${i}" class="chevron ${isOpen?'open':''}">&#9650;</span>
+      </div>
+      <div class="btn-config-body ${isOpen?'':'collapsed'}" id="cfg-body-${i}">
+        <div class="field">
+          <label>Label</label>
+          <input type="text" value="${b.label}" onchange="buttons[${i}].label=this.value;render()">
+        </div>
+        <div class="row2">
+          <div>
+            <span class="mini-label">Width</span>
+            <select onchange="buttons[${i}].width=this.value;render()">
+              <option value="wrap_content" ${b.width==='wrap_content'?'selected':''}>wrap_content</option>
+              <option value="match_parent" ${b.width==='match_parent'?'selected':''}>match_parent</option>
+              <option value="0dp" ${b.width==='0dp'?'selected':''}>0dp (weight)</option>
+            </select>
+          </div>
+          <div>
+            <span class="mini-label">Height</span>
+            <select onchange="buttons[${i}].height=this.value;render()">
+              <option value="wrap_content" ${b.height==='wrap_content'?'selected':''}>wrap_content</option>
+              <option value="match_parent" ${b.height==='match_parent'?'selected':''}>match_parent</option>
+            </select>
+          </div>
+        </div>
+
+        ${(lt==='LinearLayout-V'||lt==='LinearLayout-H') ? `
+        <div class="row2">
+          <div>
+            <span class="mini-label">layout_weight</span>
+            <input type="text" value="${b.weight||'1'}" onchange="buttons[${i}].weight=this.value;render()" placeholder="e.g. 1">
+          </div>
+          <div>
+            <span class="mini-label">gravity</span>
+            <select onchange="buttons[${i}].gravity=this.value;render()">
+              <option value="">none</option>
+              <option value="center" ${b.gravity==='center'?'selected':''}>center</option>
+              <option value="left" ${b.gravity==='left'?'selected':''}>left</option>
+              <option value="right" ${b.gravity==='right'?'selected':''}>right</option>
+              <option value="top" ${b.gravity==='top'?'selected':''}>top</option>
+              <option value="bottom" ${b.gravity==='bottom'?'selected':''}>bottom</option>
+            </select>
+          </div>
+        </div>` : ''}
+
+        ${lt==='RelativeLayout' ? `
+        <div class="group-label">Parent alignment</div>
+        <div class="checkbox-grid">
+          ${apAttrs.map(attr => `
+            <label class="cb-item ${(b.alignParent||[]).includes(attr)?'checked':''}" onclick="toggleAttr(${i},'${attr}',this)">
+              <input type="checkbox">
+              <div class="cb-dot"></div>
+              <span>${attr.replace('alignParent','').replace('center','ctr').toLowerCase()||attr}</span>
+            </label>`).join('')}
+        </div>
+        <div class="group-label" style="margin-top:6px">Relative to sibling</div>
+        <div class="row2">
+          <div>
+            <span class="mini-label">Position</span>
+            <select onchange="buttons[${i}].relPos=this.value;render()">
+              <option value="none">none</option>
+              <option value="layout_below" ${b.relPos==='layout_below'?'selected':''}>below</option>
+              <option value="layout_above" ${b.relPos==='layout_above'?'selected':''}>above</option>
+              <option value="layout_toRightOf" ${b.relPos==='layout_toRightOf'?'selected':''}>toRightOf</option>
+              <option value="layout_toLeftOf" ${b.relPos==='layout_toLeftOf'?'selected':''}>toLeftOf</option>
+            </select>
+          </div>
+          <div>
+            <span class="mini-label">Reference</span>
+            <select onchange="buttons[${i}].relRef=this.value;render()">
+              <option value="none">—</option>
+              ${refOpts}
+            </select>
+          </div>
+        </div>` : ''}
+
+        ${lt==='ConstraintLayout' ? `
+        <div class="group-label">Constraints</div>
+        <div class="row2">
+          <div>
+            <span class="mini-label">Horizontal</span>
+            <select onchange="buttons[${i}].constH=this.value;render()">
+              <option value="parent" ${b.constH==='parent'?'selected':''}>center (parent)</option>
+              <option value="start" ${b.constH==='start'?'selected':''}>start only</option>
+              <option value="end" ${b.constH==='end'?'selected':''}>end only</option>
+            </select>
+          </div>
+          <div>
+            <span class="mini-label">Vertical</span>
+            <select onchange="buttons[${i}].constV=this.value;render()">
+              <option value="parent" ${b.constV==='parent'?'selected':''}>center (parent)</option>
+              <option value="top" ${b.constV==='top'?'selected':''}>top only</option>
+              <option value="bottom" ${b.constV==='bottom'?'selected':''}>bottom only</option>
+            </select>
+          </div>
+        </div>` : ''}
+
+        ${lt==='FrameLayout' ? `
+        <div>
+          <span class="mini-label">layout_gravity</span>
+          <select onchange="buttons[${i}].frameGravity=this.value;render()">
+            <option value="">none (top|left)</option>
+            <option value="center" ${b.frameGravity==='center'?'selected':''}>center</option>
+            <option value="center_horizontal" ${b.frameGravity==='center_horizontal'?'selected':''}>center_horizontal</option>
+            <option value="center_vertical" ${b.frameGravity==='center_vertical'?'selected':''}>center_vertical</option>
+            <option value="top|right" ${b.frameGravity==='top|right'?'selected':''}>top|right</option>
+            <option value="bottom|left" ${b.frameGravity==='bottom|left'?'selected':''}>bottom|left</option>
+            <option value="bottom|right" ${b.frameGravity==='bottom|right'?'selected':''}>bottom|right</option>
+            <option value="bottom|center_horizontal" ${b.frameGravity==='bottom|center_horizontal'?'selected':''}>bottom|center</option>
+          </select>
+        </div>` : ''}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function renderPhone() {
+  const lt = currentLayout;
+  const screen = document.getElementById('phoneScreen');
+  screen.innerHTML = '';
+  screen.style.cssText = 'background:#fff;border-radius:18px;width:100%;min-height:300px;overflow:hidden;position:relative;';
+
+  if (lt === 'LinearLayout-V' || lt === 'LinearLayout-H') {
+    const dir = lt === 'LinearLayout-H' ? 'row' : 'column';
+    screen.style.display = 'flex';
+    screen.style.flexDirection = dir;
+    screen.style.padding = '8px';
+    screen.style.gap = '5px';
+    const lg = document.getElementById('layoutGravity').value;
+    if (lg === 'center') { screen.style.alignItems = 'center'; screen.style.justifyContent = 'center'; }
+    else if (lg === 'center_horizontal') { screen.style.alignItems = dir === 'column' ? 'center' : 'flex-start'; }
+    else if (lg === 'center_vertical') { screen.style.justifyContent = 'center'; }
+    else if (lg === 'top') { screen.style.justifyContent = dir === 'column' ? 'flex-start' : 'flex-start'; }
+    else if (lg === 'bottom') { screen.style.justifyContent = dir === 'column' ? 'flex-end' : 'flex-start'; }
+    else if (lg === 'right') { screen.style.alignItems = dir === 'column' ? 'flex-end' : 'flex-start'; }
+
+    buttons.forEach((b, i) => {
+      const c = COLORS[i % COLORS.length];
+      const el = document.createElement('div');
+      el.style.cssText = `background:${c.bg};color:${c.text};border-radius:5px;padding:7px 5px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid ${c.border};font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:28px;`;
+      if (b.width === 'match_parent' && dir === 'column') el.style.width = '100%';
+      else if (b.width === 'match_parent' && dir === 'row') el.style.alignSelf = 'stretch';
+      else if (b.width === '0dp' && dir === 'row') el.style.flex = b.weight || '1';
+      if (b.height === 'match_parent' && dir === 'column') el.style.flex = b.weight || '1';
+      if (b.gravity) el.style.justifyContent = b.gravity === 'left' ? 'flex-start' : b.gravity === 'right' ? 'flex-end' : 'center';
+      el.textContent = b.label;
+      screen.appendChild(el);
+    });
+  }
+
+  else if (lt === 'RelativeLayout') {
+    screen.style.position = 'relative';
+    buttons.forEach((b, i) => {
+      const c = COLORS[i % COLORS.length];
+      const el = document.createElement('div');
+      el.setAttribute('data-id', 'btn' + (i + 1));
+      el.style.cssText = `background:${c.bg};color:${c.text};border-radius:5px;padding:6px 10px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid ${c.border};position:absolute;min-width:54px;min-height:26px;font-family:monospace;`;
+      const ap = b.alignParent || [];
+      let hasH = false, hasV = false;
+      if (ap.includes('alignParentTop')) { el.style.top = '6px'; hasV = true; }
+      if (ap.includes('alignParentBottom')) { el.style.bottom = '6px'; el.style.top = 'auto'; hasV = true; }
+      if (ap.includes('alignParentLeft')) { el.style.left = '6px'; hasH = true; }
+      if (ap.includes('alignParentRight')) { el.style.right = '6px'; el.style.left = 'auto'; hasH = true; }
+      if (ap.includes('centerInParent')) { el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%,-50%)'; hasH = true; hasV = true; }
+      if (ap.includes('centerHorizontal')) { el.style.left = '50%'; el.style.transform = (el.style.transform || '') + ' translateX(-50%)'; hasH = true; }
+      if (ap.includes('centerVertical')) { el.style.top = '50%'; el.style.transform = (el.style.transform || '') + ' translateY(-50%)'; hasV = true; }
+      if (b.width === 'match_parent') { el.style.left = '0'; el.style.right = '0'; el.style.width = 'auto'; }
+      if (b.height === 'match_parent') { el.style.top = '0'; el.style.bottom = '0'; el.style.height = 'auto'; }
+      if (!hasH && !hasV) { el.style.top = (8 + i * 36) + 'px'; el.style.left = '8px'; }
+      el.textContent = b.label;
+      screen.appendChild(el);
+    });
+
+    buttons.forEach((b, i) => {
+      if (b.relPos && b.relPos !== 'none' && b.relRef && b.relRef !== 'none') {
+        const el = screen.querySelector('[data-id="btn' + (i + 1) + '"]');
+        const ref = screen.querySelector('[data-id="' + b.relRef + '"]');
+        if (!el || !ref) return;
+        const sr = screen.getBoundingClientRect();
+        const rr = ref.getBoundingClientRect();
+        const rt = rr.top - sr.top; const rl = rr.left - sr.left;
+        const rh = ref.offsetHeight; const rw = ref.offsetWidth;
+        el.style.transform = '';
+        if (b.relPos === 'layout_below') { el.style.top = (rt + rh + 4) + 'px'; el.style.bottom = 'auto'; if (!el.style.left) el.style.left = rl + 'px'; }
+        if (b.relPos === 'layout_above') { el.style.top = (rt - 32) + 'px'; }
+        if (b.relPos === 'layout_toRightOf') { el.style.left = (rl + rw + 4) + 'px'; if (!el.style.top || el.style.top === '') el.style.top = rt + 'px'; }
+        if (b.relPos === 'layout_toLeftOf') { el.style.right = (sr.width - rl + 4) + 'px'; el.style.left = 'auto'; }
+      }
+    });
+  }
+
+  else if (lt === 'ConstraintLayout') {
+    screen.style.position = 'relative';
+    buttons.forEach((b, i) => {
+      const c = COLORS[i % COLORS.length];
+      const el = document.createElement('div');
+      el.style.cssText = `background:${c.bg};color:${c.text};border-radius:5px;padding:6px 10px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid ${c.border};position:absolute;min-width:54px;min-height:26px;font-family:monospace;`;
+      const ch = b.constH || 'parent'; const cv = b.constV || 'parent';
+      if (ch === 'parent') { el.style.left = '50%'; el.style.transform = 'translateX(-50%)'; }
+      else if (ch === 'start') { el.style.left = '8px'; }
+      else if (ch === 'end') { el.style.right = '8px'; }
+      if (cv === 'parent') { el.style.top = '50%'; const t = el.style.transform || ''; el.style.transform = t + ' translateY(-50%)'; }
+      else if (cv === 'top') { el.style.top = (8 + i * 34) + 'px'; }
+      else if (cv === 'bottom') { el.style.bottom = (8 + i * 34) + 'px'; el.style.top = 'auto'; }
+      if (b.width === 'match_parent' || b.width === '0dp') { el.style.left = '8px'; el.style.right = '8px'; el.style.width = 'auto'; el.style.transform = el.style.transform.replace('translateX(-50%)', ''); }
+      el.textContent = b.label;
+      screen.appendChild(el);
+    });
+  }
+
+  else if (lt === 'FrameLayout') {
+    screen.style.position = 'relative';
+    buttons.forEach((b, i) => {
+      const c = COLORS[i % COLORS.length];
+      const el = document.createElement('div');
+      el.style.cssText = `background:${c.bg};color:${c.text};border-radius:5px;padding:6px 10px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid ${c.border};position:absolute;min-width:54px;min-height:26px;font-family:monospace;opacity:${Math.min(1, 0.65 + i * 0.12).toFixed(2)};`;
+      const fg = b.frameGravity || '';
+      if (!fg) { el.style.top = (4 + i * 4) + 'px'; el.style.left = (4 + i * 4) + 'px'; }
+      else if (fg === 'center') { el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%,-50%)'; }
+      else if (fg === 'center_horizontal') { el.style.left = '50%'; el.style.transform = 'translateX(-50%)'; el.style.top = (8 + i * 36) + 'px'; }
+      else if (fg === 'center_vertical') { el.style.top = '50%'; el.style.transform = 'translateY(-50%)'; el.style.left = (8 + i * 64) + 'px'; }
+      else if (fg === 'top|right') { el.style.top = '6px'; el.style.right = '6px'; }
+      else if (fg === 'bottom|left') { el.style.bottom = '6px'; el.style.left = '6px'; }
+      else if (fg === 'bottom|right') { el.style.bottom = '6px'; el.style.right = '6px'; }
+      else if (fg === 'bottom|center_horizontal') { el.style.bottom = '6px'; el.style.left = '50%'; el.style.transform = 'translateX(-50%)'; }
+      if (b.width === 'match_parent') { el.style.left = '0'; el.style.right = '0'; el.style.width = 'auto'; }
+      if (b.height === 'match_parent') { el.style.top = '0'; el.style.bottom = '0'; el.style.height = 'auto'; }
+      el.textContent = b.label;
+      screen.appendChild(el);
+    });
+  }
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function colorizeXml(xml) {
+  return xml
+    .replace(/(&lt;\/?[\w.]+)/g, '<span class="xml-tag">$1</span>')
+    .replace(/(&gt;|\/&gt;)/g, '<span class="xml-tag">$1</span>')
+    .replace(/(android:\w+|app:\w+|xmlns:\w+)/g, '<span class="xml-attr">$1</span>')
+    .replace(/="([^"]*)"/g, '="<span class="xml-val">$1</span>"');
+}
+
+function buildXmlRaw() {
+  const lt = currentLayout;
+  let rootTag = '';
+  let rootExtra = '';
+  if (lt === 'LinearLayout-V') { rootTag = 'LinearLayout'; rootExtra = `\n    android:orientation="vertical"`; }
+  else if (lt === 'LinearLayout-H') { rootTag = 'LinearLayout'; rootExtra = `\n    android:orientation="horizontal"`; }
+  else if (lt === 'ConstraintLayout') { rootTag = 'androidx.constraintlayout.widget.ConstraintLayout'; rootExtra = `\n    xmlns:app="http://schemas.android.com/apk/res-auto"`; }
+  else { rootTag = lt; }
+
+  const lg = (lt === 'LinearLayout-V' || lt === 'LinearLayout-H') ? document.getElementById('layoutGravity').value : '';
+
+  let xml = `<?xml version="1.0" encoding="utf-8"?>\n`;
+  xml += `<${rootTag}\n    xmlns:android="http://schemas.android.com/apk/res/android"${rootExtra}\n`;
+  if (lg) xml += `    android:gravity="${lg}"\n`;
+  xml += `    android:layout_width="match_parent"\n    android:layout_height="match_parent"\n    android:padding="16dp">\n`;
+
+  buttons.forEach((b, i) => {
+    xml += `\n    <Button\n`;
+    xml += `        android:id="@+id/btn${i+1}"\n`;
+    xml += `        android:layout_width="${b.width}"\n`;
+    xml += `        android:layout_height="${b.height}"\n`;
+    xml += `        android:text="${b.label}"\n`;
+
+    if (lt === 'LinearLayout-V' || lt === 'LinearLayout-H') {
+      if (b.weight) xml += `        android:layout_weight="${b.weight}"\n`;
+      if (b.gravity) xml += `        android:gravity="${b.gravity}"\n`;
+    }
+
+    if (lt === 'RelativeLayout') {
+      const ap = b.alignParent || [];
+      const map = {
+        alignParentTop: 'android:layout_alignParentTop="true"',
+        alignParentBottom: 'android:layout_alignParentBottom="true"',
+        alignParentLeft: 'android:layout_alignParentLeft="true"',
+        alignParentRight: 'android:layout_alignParentRight="true"',
+        centerInParent: 'android:layout_centerInParent="true"',
+        centerHorizontal: 'android:layout_centerHorizontal="true"',
+        centerVertical: 'android:layout_centerVertical="true"'
+      };
+      ap.forEach(a => { if (map[a]) xml += `        ${map[a]}\n`; });
+      if (b.relPos && b.relPos !== 'none' && b.relRef && b.relRef !== 'none') {
+        xml += `        android:${b.relPos}="@id/${b.relRef}"\n`;
+      }
+    }
+
+    if (lt === 'ConstraintLayout') {
+      const ch = b.constH || 'parent'; const cv = b.constV || 'parent';
+      if (ch === 'parent') { xml += `        app:layout_constraintStart_toStartOf="parent"\n`; xml += `        app:layout_constraintEnd_toEndOf="parent"\n`; }
+      else if (ch === 'start') xml += `        app:layout_constraintStart_toStartOf="parent"\n`;
+      else if (ch === 'end') xml += `        app:layout_constraintEnd_toEndOf="parent"\n`;
+      if (cv === 'parent') { xml += `        app:layout_constraintTop_toTopOf="parent"\n`; xml += `        app:layout_constraintBottom_toBottomOf="parent"\n`; }
+      else if (cv === 'top') xml += `        app:layout_constraintTop_toTopOf="parent"\n`;
+      else if (cv === 'bottom') xml += `        app:layout_constraintBottom_toBottomOf="parent"\n`;
+    }
+
+    if (lt === 'FrameLayout') {
+      if (b.frameGravity) xml += `        android:layout_gravity="${b.frameGravity}"\n`;
+    }
+
+    xml = xml.trimEnd() + ' />\n';
+  });
+
+  xml += `\n</${rootTag}>`;
+  return xml;
+}
+
+function render() {
+  renderPhone();
+  const raw = buildXmlRaw();
+  document.getElementById('xmlOutput').innerHTML = colorizeXml(escapeHtml(raw));
+  const lines = raw.split('\n').length;
+  document.getElementById('xmlStats').textContent = lines + ' lines';
+}
+
+function copyXml() {
+  const raw = buildXmlRaw();
+  navigator.clipboard.writeText(raw).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 15 4 10"/></svg> Copied to clipboard!`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy XML to clipboard`;
+    }, 2000);
+  });
+}
+
+document.getElementById('hintBox').textContent = HINTS['RelativeLayout'];
+initButtons(2);
+buildConfigs();
+render();
+</script>
+</body>
+</html>
