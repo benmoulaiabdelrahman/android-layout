@@ -694,11 +694,10 @@ function buildConfigs() {
         <div class="group-label">Parent alignment</div>
         <div class="checkbox-grid">
           ${apAttrs.map(attr => `
-            <label class="cb-item ${(b.alignParent||[]).includes(attr)?'checked':''}" onclick="toggleAttr(${i},'${attr}',this)">
-              <input type="checkbox">
+            <button type="button" class="cb-item ${(b.alignParent||[]).includes(attr)?'checked':''}" onclick="toggleAttr(${i},'${attr}',this)">
               <div class="cb-dot"></div>
               <span>${attr.replace('alignParent','').replace('center','ctr').toLowerCase()||attr}</span>
-            </label>`).join('')}
+            </button>`).join('')}
         </div>
         <div class="group-label" style="margin-top:6px">Relative to sibling</div>
         <div class="row2">
