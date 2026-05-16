@@ -805,16 +805,47 @@ function renderPhone() {
       el.style.cssText = `background:${c.bg};color:${c.text};border-radius:5px;padding:6px 10px;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;border:1.5px solid ${c.border};position:absolute;min-width:54px;min-height:26px;font-family:monospace;`;
       const ap = b.alignParent || [];
       let hasH = false, hasV = false;
-      if (ap.includes('alignParentTop')) { el.style.top = '6px'; hasV = true; }
-      if (ap.includes('alignParentBottom')) { el.style.bottom = '6px'; el.style.top = 'auto'; hasV = true; }
-      if (ap.includes('alignParentLeft')) { el.style.left = '6px'; hasH = true; }
-      if (ap.includes('alignParentRight')) { el.style.right = '6px'; el.style.left = 'auto'; hasH = true; }
-      if (ap.includes('centerInParent')) { el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%,-50%)'; hasH = true; hasV = true; }
-      if (ap.includes('centerHorizontal')) { el.style.left = '50%'; el.style.transform = (el.style.transform || '') + ' translateX(-50%)'; hasH = true; }
-      if (ap.includes('centerVertical')) { el.style.top = '50%'; el.style.transform = (el.style.transform || '') + ' translateY(-50%)'; hasV = true; }
-      if (b.width === 'match_parent') { el.style.left = '0'; el.style.right = '0'; el.style.width = 'auto'; }
-      if (b.height === 'match_parent') { el.style.top = '0'; el.style.bottom = '0'; el.style.height = 'auto'; }
-      if (!hasH && !hasV) { el.style.top = (8 + i * 36) + 'px'; el.style.left = '8px'; }
+      // Process match_parent first to set initial bounds
+      if (b.width === 'match_parent') {
+        el.style.left = '6px';
+        el.style.right = '6px';
+        el.style.width = 'auto'; // Width is determined by left/right
+        hasH = true;
+      }
+      if (b.height === 'match_parent') {
+        el.style.top = '6px';
+        el.style.bottom = '6px';
+        el.style.height = 'auto'; // Height is determined by top/bottom
+        hasV = true;
+      }
+
+      // Then apply explicit alignment attributes.
+      // These should only apply if match_parent hasn't already constrained that dimension.
+      // Centering can still apply on top of match_parent as it affects positioning within bounds.
+      if (ap.includes('alignParentTop') && !hasV) { el.style.top = '6px'; hasV = true; }
+      if (ap.includes('alignParentBottom') && !hasV) { el.style.bottom = '6px'; el.style.top = 'auto'; hasV = true; }
+      if (ap.includes('alignParentLeft') && !hasH) { el.style.left = '6px'; hasH = true; }
+      if (ap.includes('alignParentRight') && !hasH) { el.style.right = '6px'; el.style.left = 'auto'; hasH = true; }
+
+      // Centering attributes are independent of match_parent for positioning.
+      // If match_parent is set, these effectively center the _content_ of the stretched element visually.
+      // Centering attributes should only apply if the dimension is not match_parent,
+      // as match_parent already dictates the bounds.
+      // If a button is match_parent in width, centerHorizontal doesn't make sense for its position.
+      if (ap.includes('centerInParent') && !hasH && !hasV) { // Only center if not already stretched or aligned
+        el.style.top = '50%'; el.style.left = '50%'; el.style.transform = 'translate(-50%,-50%)'; hasH = true; hasV = true;
+      } else {
+        if (ap.includes('centerHorizontal') && !hasH) {
+          el.style.left = '50%'; el.style.transform = (el.style.transform || '') + ' translateX(-50%)'; hasH = true;
+        }
+        if (ap.includes('centerVertical') && !hasV) {
+          el.style.top = '50%'; el.style.transform = (el.style.transform || '') + ' translateY(-50%)'; hasV = true;
+        }
+      }
+
+      // Default positioning if no horizontal or vertical positioning has been applied yet
+      if (!hasH) { el.style.left = '8px'; }
+      if (!hasV) { el.style.top = (8 + i * 36) + 'px'; }
       el.textContent = b.label;
       screen.appendChild(el);
     });
